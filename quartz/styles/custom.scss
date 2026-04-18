@@ -1,4 +1,153 @@
 @use "./base.scss";
+@use "./dna-tokens";
+
+// ── DNA: Global utility classes ──────────────────────────────────────────────
+
+.hud {
+  font-family: var(--codeFont);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-feature-settings: "tnum", "lnum";
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.hud-sm {
+  font-family: var(--codeFont);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-feature-settings: "tnum", "lnum";
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+// Live sync dot
+.live-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #76b900;
+  animation: live-pulse-signal 2.2s ease-out infinite;
+}
+
+@keyframes live-pulse-signal {
+  0%   { box-shadow: 0 0 0 0   rgba(118, 185, 0, 0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(118, 185, 0, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(118, 185, 0, 0); }
+}
+
+// ── DNA: Signal ambient glow (dark only) ─────────────────────────────────────
+
+:root[saved-theme="dark"] body::before,
+body::before {
+  content: "";
+  position: fixed;
+  top: -15%;
+  left: -10%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(ellipse at center, rgba(118, 185, 0, 0.065) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+:root[saved-theme="light"] body::before {
+  display: none;
+}
+
+// ── DNA: Selection ──
+
+::selection {
+  background: #76b900 !important;
+  color: #09090b !important;
+}
+
+// ── DNA: Typography ──
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+article h1 {
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+article h2 {
+  letter-spacing: -0.02em;
+}
+
+// ── DNA: Section HUD header bar ──
+
+article > .dna-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--codeFont);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-dim, #3f3f46);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--c-glass-border, var(--lightgray));
+}
+
+// ── DNA: Code blocks ──
+
+pre {
+  border: 1px solid var(--c-glass-border, var(--lightgray)) !important;
+  border-radius: 12px !important;
+}
+
+code {
+  border-radius: 6px !important;
+}
+
+// ── DNA: Blockquotes ──
+
+blockquote {
+  border-left: 1px solid var(--secondary) !important;
+  border-left-width: 1px !important;
+}
+
+// ── DNA: Sidebar glass treatment ─────────────────────────────────────────────
+
+.sidebar.left {
+  border-right: 1px solid var(--c-glass-border, var(--lightgray));
+}
+
+// Explorer item hover glass effect
+.explorer li > a:hover,
+.explorer button:hover {
+  background: var(--c-glass-bg, var(--highlight)) !important;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+// Graph, Backlinks, TOC glass card treatment
+.graph,
+.backlinks,
+.toc {
+  border: 1px solid var(--c-glass-border, var(--lightgray));
+  border-radius: 12px;
+  padding: 0.75rem !important;
+  background: var(--c-glass-bg, transparent);
+}
+
+// ── DNA: Tables ──
+
+th {
+  border-bottom: 1px solid var(--secondary);
+}
 
 // ── Graph page floating UI ───────────────────────────────────────────────────
 

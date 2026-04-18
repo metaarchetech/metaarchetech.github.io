@@ -44,7 +44,13 @@ export default (() => {
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" />
+            <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
             <link rel="stylesheet" href={googleFontHref(cfg.theme)} />
+            {/* Chiron Hei HK — CJK variable font for zh-TW content */}
+            <link
+              rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/chiron-hei-hk-webfont@2.6.8/css/vf.css"
+            />
             {cfg.theme.typography.title && (
               <link rel="stylesheet" href={googleFontSubsetHref(cfg.theme, cfg.pageTitle)} />
             )}

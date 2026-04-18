@@ -1,0 +1,39 @@
+// DNA Design Tokens — ported from visustwin-showcase
+// Uses Quartz's [saved-theme] attribute (set by darkmode.inline.ts)
+
+// ── Dark theme (default) ──
+:root,
+:root[saved-theme="dark"] {
+  --c-bg:           #09090b;
+  --c-text:         #f4f4f5;
+  --c-text-muted:   #71717a;
+  --c-text-dim:     #3f3f46;
+  --c-glass-bg:     rgba(255, 255, 255, 0.035);
+  --c-glass-border: rgba(255, 255, 255, 0.08);
+  --c-glass-inset:  rgba(255, 255, 255, 0.06);
+  --c-glass-glow:   0.45;
+  --c-pill-bg:      rgba(9, 9, 11, 0.6);
+  --c-pill-border:  rgba(255, 255, 255, 0.07);
+  --c-accent:       #76b900;
+}
+
+// ── Light theme ──
+:root[saved-theme="light"] {
+  --c-bg:           #f4f4f5;
+  --c-text:         #18181b;
+  --c-text-muted:   #71717a;
+  --c-text-dim:     #a1a1aa;
+  --c-glass-bg:     rgba(0, 0, 0, 0.03);
+  --c-glass-border: rgba(0, 0, 0, 0.07);
+  --c-glass-inset:  rgba(255, 255, 255, 0.55);
+  --c-glass-glow:   0.22;
+  --c-pill-bg:      rgba(244, 244, 245, 0.88);
+  --c-pill-border:  rgba(0, 0, 0, 0.07);
+  --c-accent:       #76b900;
+}
+
+// ── Override Quartz font stacks to include Chiron Hei HK for CJK ──
+:root {
+  --bodyFont:   "Space Grotesk", "Chiron Hei HK WS", "Noto Sans TC", system-ui, sans-serif;
+  --headerFont: "Space Grotesk", "Chiron Hei HK WS", "Noto Sans TC", system-ui, sans-serif;
+}
