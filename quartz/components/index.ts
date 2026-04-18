@@ -25,6 +25,7 @@ import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
 import GraphLink from "./GraphLink"
 import DnaHeader from "./DnaHeader"
+import AiChat from "./AiChat"
 
 export {
   ArticleTitle,
@@ -54,4 +55,5 @@ export {
   ConditionalRender,
   GraphLink,
   DnaHeader,
+  AiChat,
 }

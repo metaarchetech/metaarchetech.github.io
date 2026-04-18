@@ -5,7 +5,11 @@ import * as Component from "./quartz/components"
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [Component.DnaHeader()],
-  afterBody: [],
+  afterBody: [
+    Component.AiChat({
+      workerUrl: "https://metaarchetech-ai.YOUR_SUBDOMAIN.workers.dev",
+    }),
+  ],
   footer: Component.Footer({
     links: {
       GitHub: "https://github.com/metaarchetech/metaarchetech.github.io",
