@@ -21,7 +21,6 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-// Live sync dot
 .live-dot {
   display: inline-block;
   flex-shrink: 0;
@@ -57,14 +56,10 @@ body::before {
   display: none;
 }
 
-// ── DNA: Selection ──
-
 ::selection {
   background: #76b900 !important;
   color: #09090b !important;
 }
-
-// ── DNA: Typography ──
 
 html {
   -webkit-font-smoothing: antialiased;
@@ -76,77 +71,192 @@ body {
               color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-article h1 {
-  letter-spacing: -0.03em;
-  font-weight: 700;
-}
-
-article h2 {
-  letter-spacing: -0.02em;
-}
-
-// ── DNA: Section HUD header bar ──
-
-article > .dna-section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: var(--codeFont);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-text-dim, #3f3f46);
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--c-glass-border, var(--lightgray));
-}
-
-// ── DNA: Code blocks ──
+article h1 { letter-spacing: -0.03em; font-weight: 700; }
+article h2 { letter-spacing: -0.02em; }
 
 pre {
   border: 1px solid var(--c-glass-border, var(--lightgray)) !important;
   border-radius: 12px !important;
 }
+code { border-radius: 6px !important; }
+blockquote { border-left: 1px solid var(--secondary) !important; }
+th { border-bottom: 1px solid var(--secondary); }
 
-code {
-  border-radius: 6px !important;
+// ── DNA: Full-bleed iOS layout ────────────────────────────────────────────────
+//
+// Override Quartz's 3-column grid:
+//   Before: [320px sidebar-left] [auto center] [320px sidebar-right]
+//   After:  [auto center] — sidebars become fixed overlays
+//
+// Left sidebar  → slide-in glass drawer (hamburger in pill header)
+// Right sidebar → floating glass card pinned to right edge (desktop only)
+
+// Stretch page container to full viewport
+.page {
+  max-width: 100% !important;
 }
 
-// ── DNA: Blockquotes ──
-
-blockquote {
-  border-left: 1px solid var(--secondary) !important;
-  border-left-width: 1px !important;
+// Single-column grid — center takes full width
+.page > #quartz-body {
+  grid-template-columns: auto !important;
+  grid-template-rows: auto auto auto !important;
+  grid-template-areas:
+    "grid-header"
+    "grid-center"
+    "grid-footer" !important;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 1.75rem;
+  column-gap: 0 !important;
 }
 
-// ── DNA: Sidebar glass treatment ─────────────────────────────────────────────
-
-.sidebar.left {
-  border-right: 1px solid var(--c-glass-border, var(--lightgray));
+// Push content below fixed pill header
+.page > #quartz-body > .page-header {
+  margin-top: 5rem !important;
 }
 
-// Explorer item hover glass effect
-.explorer li > a:hover,
-.explorer button:hover {
-  background: var(--c-glass-bg, var(--highlight)) !important;
+.page > #quartz-body > .center {
+  padding-top: 0.5rem;
+}
+
+// ── Left sidebar → glass drawer ──────────────────────────────────────────────
+
+.page > #quartz-body > .sidebar.left {
+  position: fixed !important;
+  inset: 0 auto 0 0 !important;
+  width: 272px !important;
+  height: 100vh !important;
+  transform: translateX(-100%);
+  transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 340ms ease;
+  z-index: 8000;
+  padding: 5.5rem 1.25rem 2rem 1.25rem !important;
+  background: rgba(9, 9, 11, 0.97) !important;
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+  box-shadow: none;
+  overflow-y: auto;
+  flex-direction: column !important;
+  gap: 1rem !important;
+
+  &.dna-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 60px rgba(0, 0, 0, 0.7);
+  }
+}
+
+// Light mode drawer
+:root[saved-theme="light"] .page > #quartz-body > .sidebar.left {
+  background: rgba(244, 244, 245, 0.97) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+// Drawer backdrop overlay
+.dna-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 7999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+
+  &.dna-open {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+// ── Right sidebar → floating glass card (desktop only) ───────────────────────
+
+@media (min-width: 1100px) {
+  .page > #quartz-body > .sidebar.right {
+    position: fixed !important;
+    right: 1.25rem !important;
+    top: 5rem !important;
+    width: 232px !important;
+    height: auto !important;
+    max-height: calc(100vh - 6.5rem);
+    padding: 1.125rem !important;
+    border-radius: 20px !important;
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    background: rgba(255, 255, 255, 0.032) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 24px 64px rgba(0, 0, 0, 0.5) !important;
+    overflow-y: auto;
+    gap: 1rem !important;
+    flex-direction: column !important;
+    // signal glow
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: radial-gradient(
+        ellipse at 60% 20%,
+        rgba(118, 185, 0, 0.07) 0%,
+        transparent 65%
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+    & > * { position: relative; z-index: 1; }
+  }
+
+  :root[saved-theme="light"] .page > #quartz-body > .sidebar.right {
+    background: rgba(0, 0, 0, 0.028) !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 20px 50px rgba(0, 0, 0, 0.12) !important;
+  }
+}
+
+// Hide right panel on smaller screens
+@media (max-width: 1099px) {
+  .page > #quartz-body > .sidebar.right {
+    display: none !important;
+  }
+}
+
+// Remove borders from graph/toc/backlinks inside the floating right panel
+// (the panel itself is the glass card, children shouldn't double-border)
+.sidebar.right .graph,
+.sidebar.right .backlinks,
+.sidebar.right .toc {
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+// ── Drawer interior styling ───────────────────────────────────────────────────
+
+.sidebar.left .explorer li > a:hover,
+.sidebar.left .explorer button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
   border-radius: 6px;
   transition: background 0.15s ease;
 }
 
-// Graph, Backlinks, TOC glass card treatment
-.graph,
-.backlinks,
-.toc {
+:root[saved-theme="light"] .sidebar.left .explorer li > a:hover,
+:root[saved-theme="light"] .sidebar.left .explorer button:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+// ── Graph / Backlinks / ToC inside floating right panel (glass variant) ──────
+
+.graph, .backlinks, .toc {
   border: 1px solid var(--c-glass-border, var(--lightgray));
   border-radius: 12px;
   padding: 0.75rem !important;
   background: var(--c-glass-bg, transparent);
-}
-
-// ── DNA: Tables ──
-
-th {
-  border-bottom: 1px solid var(--secondary);
 }
 
 // ── Graph page floating UI ───────────────────────────────────────────────────
@@ -160,11 +270,9 @@ th {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  pointer-events: none; // let clicks pass through to canvas
+  pointer-events: none;
 
-  & > * {
-    pointer-events: auto; // re-enable on interactive children
-  }
+  & > * { pointer-events: auto; }
 
   .graph-ui-back {
     display: inline-flex;
@@ -180,12 +288,7 @@ th {
     border: 1px solid var(--lightgray);
     width: fit-content;
     transition: color 0.2s, border-color 0.2s, background 0.2s;
-
-    &:hover {
-      color: var(--dark);
-      border-color: var(--dark);
-      background: var(--light);
-    }
+    &:hover { color: var(--dark); border-color: var(--dark); background: var(--light); }
   }
 
   .graph-ui-title {
@@ -238,20 +341,11 @@ th {
   }
 }
 
-// Mobile: compact the UI
 @media (max-width: 768px) {
   #graph-ui {
     padding: 1rem;
     gap: 0.5rem;
-
-    .graph-ui-title {
-      font-size: 1.1rem;
-    }
-
-    .graph-ui-legend {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 0.25rem 0.75rem;
-    }
+    .graph-ui-title { font-size: 1.1rem; }
+    .graph-ui-legend { flex-direction: row; flex-wrap: wrap; gap: 0.25rem 0.75rem; }
   }
 }
