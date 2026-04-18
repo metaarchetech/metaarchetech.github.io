@@ -106,6 +106,12 @@
 // instead of fighting local graph's overflow:hidden constraints.
 
 body:has(article.graph-page) {
+  // Pill header lives at z-index 9000 by default; lift above the graph canvas
+  // (global-graph-outer at 9999) so it stays interactive on /graph.
+  .dna-pill-header {
+    z-index: 10001 !important;
+  }
+
   // Show global graph container full-screen, no modal styling
   .global-graph-outer {
     display: block !important;
@@ -187,9 +193,15 @@ body:has(article.graph-page) {
   }
 
   // ── Hide local graph only (not wrapper — global graph is its sibling) ──
+  // Strip the glass-card chrome from the wrapper or it paints a visible
+  // bordered rectangle in the center column.
   .popover-hint .graph {
     height: 100dvh !important;
     margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
 
     & > h3 {
       display: none !important;

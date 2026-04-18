@@ -68,7 +68,36 @@ type TweenNode = {
   stop: () => void
 }
 
-function initBgShader(canvas: HTMLCanvasElement) {
+type ShaderParams = {
+  speed: number     // time multiplier (flow animation rate)
+  scale: number     // spatial scale of the noise field (smaller = more zoomed out)
+  flow: number      // strength of domain-warp displacement
+  vignette: number  // edge darkening amount (0 = off)
+  bias: number      // gradient contrast — low = more colorA, high = more colorB
+  opacity: number   // overall canvas opacity (how much the shader shows over the page)
+  colorA: string    // background tint (low end of gradient), #rrggbb
+  colorB: string    // foreground tint (high end of gradient), #rrggbb
+}
+const SHADER_DEFAULTS_BY_THEME = {
+  light: { colorA: "#ebf0eb", colorB: "#8cc71f", bias: 0.6, opacity: 0.28 },
+  dark:  { colorA: "#030405", colorB: "#2e5c03", bias: 2.2, opacity: 0.55 },
+}
+type Theme = "light" | "dark"
+function currentTheme(): Theme {
+  return document.documentElement.getAttribute("saved-theme") === "light" ? "light" : "dark"
+}
+function defaultShaderParams(theme: Theme = currentTheme()): ShaderParams {
+  const t = SHADER_DEFAULTS_BY_THEME[theme]
+  return { speed: 0.04, scale: 1.1, flow: 0.55, vignette: 0.32, ...t }
+}
+function hexToRgb01(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return [0, 0, 0]
+  const n = parseInt(m[1], 16)
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+}
+
+function initBgShader(canvas: HTMLCanvasElement, initial: ShaderParams = defaultShaderParams()) {
   const gl = canvas.getContext("webgl", { antialias: false, alpha: false })
   if (!gl) return null
   const VERT = `attribute vec2 a;void main(){gl_Position=vec4(a,0.0,1.0);}`
@@ -76,6 +105,7 @@ function initBgShader(canvas: HTMLCanvasElement) {
 precision highp float;
 uniform vec2 u_res; uniform float u_time;
 uniform vec3 u_colA; uniform vec3 u_colB; uniform float u_bias;
+uniform float u_speed; uniform float u_scale; uniform float u_flow; uniform float u_vignette;
 vec3 m3(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
 vec2 m2(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
 vec3 pm(vec3 x){return m3(((x*34.0)+1.0)*x);}
@@ -95,13 +125,13 @@ float sn(vec2 v){
 float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<4;i++){v+=a*sn(p);p*=2.03;a*=0.5;}return v;}
 void main(){
   vec2 p=(gl_FragCoord.xy-0.5*u_res)/min(u_res.x,u_res.y);
-  float t=u_time*0.03;
-  vec2 flow=vec2(fbm(p*0.3+vec2(t,0)),fbm(p*0.3+vec2(0,t)+5.1));
-  vec2 q=p+flow*0.5;
-  float n=fbm(q*0.35+t*0.7); n+=0.2*fbm(q*0.7-t*0.3);
-  n=smoothstep(-0.9,0.9,n);
+  float t=u_time*u_speed;
+  vec2 flow=vec2(fbm(p*u_scale+vec2(t,0)),fbm(p*u_scale+vec2(0,t)+5.1));
+  vec2 q=p+flow*u_flow;
+  float n=fbm(q*(u_scale*1.18)+t*0.9); n+=0.3*fbm(q*(u_scale*2.0)-t*0.5);
+  n=smoothstep(-0.85,0.85,n);
   vec3 col=mix(u_colA,u_colB,pow(clamp(n,0.0,1.0),u_bias));
-  col*=1.0-0.32*length(p);
+  col*=1.0-u_vignette*length(p);
   col=pow(max(col,0.0),vec3(0.88));
   gl_FragColor=vec4(col,1.0);
 }`
@@ -122,13 +152,14 @@ void main(){
     colA: gl.getUniformLocation(prog, "u_colA"),
     colB: gl.getUniformLocation(prog, "u_colB"),
     bias: gl.getUniformLocation(prog, "u_bias"),
+    speed: gl.getUniformLocation(prog, "u_speed"),
+    scale: gl.getUniformLocation(prog, "u_scale"),
+    flow: gl.getUniformLocation(prog, "u_flow"),
+    vignette: gl.getUniformLocation(prog, "u_vignette"),
   }
-  const palette = () => document.documentElement.getAttribute("saved-theme") === "light"
-    ? { colA: [0.92, 0.94, 0.92] as number[], colB: [0.55, 0.78, 0.12] as number[], bias: 0.6 }
-    : { colA: [0.01, 0.015, 0.02] as number[], colB: [0.18, 0.36, 0.01] as number[], bias: 2.2 }
-  let theme = palette()
-  const applyTheme = () => { theme = palette() }
-  document.addEventListener("themechange", applyTheme)
+  const params: ShaderParams = { ...initial }
+  // Seed canvas opacity from params so the UI control is the single source of truth.
+  canvas.style.opacity = String(params.opacity)
   const start = performance.now()
   let rafId = 0
   const resize = () => {
@@ -145,9 +176,14 @@ void main(){
     gl.vertexAttribPointer(loc.a, 2, gl.FLOAT, false, 0, 0)
     gl.uniform2f(loc.res, canvas.width, canvas.height)
     gl.uniform1f(loc.time, (now - start) / 1000)
-    gl.uniform3f(loc.colA, theme.colA[0], theme.colA[1], theme.colA[2])
-    gl.uniform3f(loc.colB, theme.colB[0], theme.colB[1], theme.colB[2])
-    gl.uniform1f(loc.bias, theme.bias)
+    const ca = hexToRgb01(params.colorA), cb = hexToRgb01(params.colorB)
+    gl.uniform3f(loc.colA, ca[0], ca[1], ca[2])
+    gl.uniform3f(loc.colB, cb[0], cb[1], cb[2])
+    gl.uniform1f(loc.bias, params.bias)
+    gl.uniform1f(loc.speed, params.speed)
+    gl.uniform1f(loc.scale, params.scale)
+    gl.uniform1f(loc.flow, params.flow)
+    gl.uniform1f(loc.vignette, params.vignette)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
     rafId = requestAnimationFrame(render)
   }
@@ -155,8 +191,12 @@ void main(){
     start: () => { if (!rafId) rafId = requestAnimationFrame(render) },
     stop: () => {
       cancelAnimationFrame(rafId); rafId = 0
-      document.removeEventListener("themechange", applyTheme)
     },
+    setParam: <K extends keyof ShaderParams>(key: K, value: ShaderParams[K]) => {
+      params[key] = value
+      if (key === "opacity") canvas.style.opacity = String(value)
+    },
+    getParams: () => ({ ...params }),
   }
 }
 
@@ -260,6 +300,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
   let linkStrength = 1
   let linkWidth = isFullPage ? 2 : 1
   let nodeSizeMult = 1
+  let shaderParams: ShaderParams = defaultShaderParams()
   // Load saved graph settings from localStorage
   try {
     const saved = JSON.parse(localStorage.getItem("dna-graph-forces") ?? "{}")
@@ -271,6 +312,16 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     if (saved.opacityScale != null) opacityScale = +saved.opacityScale
     if (saved.linkWidth != null) linkWidth = +saved.linkWidth
     if (saved.nodeSizeMult != null) nodeSizeMult = +saved.nodeSizeMult
+    if (saved.shader && typeof saved.shader === "object") {
+      for (const k of ["speed", "scale", "flow", "vignette", "bias", "opacity"] as const) {
+        if (saved.shader[k] != null) shaderParams[k] = +saved.shader[k]
+      }
+      for (const k of ["colorA", "colorB"] as const) {
+        if (typeof saved.shader[k] === "string" && /^#?[0-9a-f]{6}$/i.test(saved.shader[k])) {
+          shaderParams[k] = saved.shader[k].startsWith("#") ? saved.shader[k] : "#" + saved.shader[k]
+        }
+      }
+    }
   } catch {}
 
   // we virtualize the simulation and use pixi to actually render it
@@ -278,7 +329,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     .force("charge", forceManyBody().strength(-100 * repelForce))
     .force("center", forceCenter().strength(centerForce))
     .force("link", forceLink(graphData.links).distance(linkDistance).strength(linkStrength))
-    .force("collide", forceCollide<NodeData>((n) => nodeRadius(n)).iterations(3))
+    .force("collide", forceCollide<NodeData>((n) => nodeRadius(n) * nodeSizeMult).iterations(3))
 
   const radius = (Math.min(width, height) / 2) * 0.8
   if (enableRadial) simulation.force("radial", forceRadial(radius).strength(0.2))
@@ -302,9 +353,13 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     {} as Record<(typeof cssVars)[number], string>,
   )
 
+  // Theme-aware: in light mode Meta is near-black; in dark mode it's near-white
+  const isLightTheme = document.documentElement.getAttribute("saved-theme") === "light"
+  const metaColor = isLightTheme ? "#18181b" : "#ffffff"
+
   // PARA folder color palette — mirrors Obsidian graph.json colorGroups
   const folderColors: [string, string][] = [
-    ["00-Meta",      "#ffffff"], // white  (rgb 16777215)
+    ["00-Meta",      metaColor],  // theme-aware: black in light mode, white in dark
     ["01-Projects",  "#60a5fa"], // blue   (rgb  6333946)
     ["02-Areas",     "#34d399"], // green  (rgb  3462041)
     ["03-Products",  "#a78bfa"], // purple (rgb 10980346)
@@ -319,13 +374,16 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     return null
   }
 
+  // Obsidian-matching tag color (pink, solid)
+  const TAG_COLOR = "#ec4899"
+
   // calculate color
   const color = (d: NodeData) => {
     const isCurrent = d.id === slug
     if (isCurrent) {
       return computedStyleMap["--secondary"]
     } else if (d.id.startsWith("tags/")) {
-      return computedStyleMap["--tertiary"]
+      return TAG_COLOR
     }
     const fc = getFolderColor(d.id)
     if (fc) return fc
@@ -335,11 +393,12 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     return computedStyleMap["--gray"]
   }
 
+  // Base radius (no nodeSizeMult applied) — visual multiplier is done via gfx.scale
   function nodeRadius(d: NodeData) {
     const numLinks = graphData.links.filter(
       (l) => l.source.id === d.id || l.target.id === d.id,
     ).length
-    return ((isFullPage ? 4 : 2) + Math.sqrt(numLinks) * (isFullPage ? 1.8 : 1)) * nodeSizeMult
+    return (isFullPage ? 4 : 2) + Math.sqrt(numLinks) * (isFullPage ? 1.8 : 1)
   }
 
   let hoveredNodeId: string | null = null
@@ -532,7 +591,6 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     label.scale.set(1 / scale)
 
     let oldLabelOpacity = 0
-    const isTagNode = nodeId.startsWith("tags/")
     const gfx = new Graphics({
       interactive: true,
       label: nodeId,
@@ -541,7 +599,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       cursor: "pointer",
     })
       .circle(0, 0, nodeRadius(n))
-      .fill({ color: isTagNode ? computedStyleMap["--light"] : color(n) })
+      .fill({ color: color(n) })
       .on("pointerover", (e) => {
         updateHoverInfo(e.target.label)
         oldLabelOpacity = label.alpha
@@ -557,9 +615,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
         }
       })
 
-    if (isTagNode) {
-      gfx.stroke({ width: 2, color: computedStyleMap["--tertiary"] })
-    }
+    gfx.scale.set(nodeSizeMult)
 
     nodesContainer.addChild(gfx)
     labelsContainer.addChild(label)
@@ -702,9 +758,10 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     // Shader background canvas
     const bgCanvas = document.createElement("canvas")
     bgCanvas.id = "graph-bg-canvas"
-    bgCanvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"
+    // Opacity is owned by shader params (updated via setParam); blend mode is theme-driven.
+    bgCanvas.style.cssText = `position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;mix-blend-mode:${isLightTheme ? "multiply" : "lighten"};`
     document.body.insertBefore(bgCanvas, document.body.firstChild)
-    bgShader = initBgShader(bgCanvas)
+    bgShader = initBgShader(bgCanvas, shaderParams)
     bgShader?.start()
 
     const nodeCount = graphData.nodes.filter((n) => !n.id.startsWith("tags/")).length
@@ -723,13 +780,13 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       <div class="graph-ui-title">Knowledge Graph</div>
       <div class="graph-ui-stats">${nodeCount} nodes · ${linkCount} links</div>
       <div class="graph-ui-legend">
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#ffffff;box-shadow:0 0 0 1px var(--lightgray)"></span>Meta</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:${metaColor};box-shadow:0 0 0 1px var(--lightgray)"></span>Meta</div>
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#60a5fa"></span>Projects</div>
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#34d399"></span>Areas</div>
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#a78bfa"></span>Products</div>
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#fbbf24"></span>Resources</div>
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#9ca3af"></span>Archive</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:transparent;border:2px solid var(--tertiary)"></span>Tags</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#ec4899"></span>Tags</div>
       </div>
       <div class="graph-ui-hint">Scroll to zoom · Drag to pan · Click node to open</div>
     `
@@ -787,6 +844,49 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
             <span class="graph-settings-value" id="gs-linkDistance-val">${Math.round(linkDistance)}</span>
           </label>
         </div>
+        <div class="graph-settings-section">
+          <div class="graph-settings-section-title">流體背景</div>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">流動速度</span>
+            <input type="range" id="gs-shSpeed" min="0" max="0.2" step="0.005" value="${shaderParams.speed.toFixed(3)}">
+            <span class="graph-settings-value" id="gs-shSpeed-val">${shaderParams.speed.toFixed(3)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">紋理尺度</span>
+            <input type="range" id="gs-shScale" min="0.3" max="3" step="0.05" value="${shaderParams.scale.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-shScale-val">${shaderParams.scale.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">流體扭曲</span>
+            <input type="range" id="gs-shFlow" min="0" max="1.5" step="0.05" value="${shaderParams.flow.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-shFlow-val">${shaderParams.flow.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">邊緣漸暗</span>
+            <input type="range" id="gs-shVignette" min="0" max="0.8" step="0.02" value="${shaderParams.vignette.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-shVignette-val">${shaderParams.vignette.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">不透明度</span>
+            <input type="range" id="gs-shOpacity" min="0" max="1" step="0.02" value="${shaderParams.opacity.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-shOpacity-val">${shaderParams.opacity.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">對比</span>
+            <input type="range" id="gs-shBias" min="0.1" max="5" step="0.05" value="${shaderParams.bias.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-shBias-val">${shaderParams.bias.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row graph-settings-row-color">
+            <span class="graph-settings-label">背景色 A</span>
+            <input type="color" id="gs-shColorA" value="${shaderParams.colorA}">
+            <span class="graph-settings-value" id="gs-shColorA-val">${shaderParams.colorA}</span>
+          </label>
+          <label class="graph-settings-row graph-settings-row-color">
+            <span class="graph-settings-label">背景色 B</span>
+            <input type="color" id="gs-shColorB" value="${shaderParams.colorB}">
+            <span class="graph-settings-value" id="gs-shColorB-val">${shaderParams.colorB}</span>
+          </label>
+        </div>
         <button class="graph-settings-save" id="graph-settings-save">Save</button>
       </div>
     `
@@ -818,9 +918,23 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       fontSize = v
       for (const n of nodeRenderData) n.label.style.fontSize = v * 15
     })
-    wireSlider("gs-opacityScale", (v) => { opacityScale = v })
+    wireSlider("gs-opacityScale", (v) => {
+      opacityScale = v
+      // Recompute label alpha immediately using current zoom level
+      const scale = currentTransform.k * opacityScale
+      const scaleOpacity = Math.max((scale - 1) / 3.75, 0)
+      const activeSet = new Set(nodeRenderData.filter((n) => n.active).map((n) => n.label))
+      for (const label of labelsContainer.children) {
+        if (!activeSet.has(label as Text)) label.alpha = scaleOpacity
+      }
+    })
     wireSlider("gs-linkWidth", (v) => { linkWidth = v })
-    wireSlider("gs-nodeSizeMult", (v) => { nodeSizeMult = v })
+    wireSlider("gs-nodeSizeMult", (v) => {
+      nodeSizeMult = v
+      for (const n of nodeRenderData) n.gfx.scale.set(v)
+      ;(simulation.force("collide") as any).radius((d: NodeData) => nodeRadius(d) * v)
+      simulation.alpha(0.2).restart()
+    })
     wireSlider("gs-centerForce", (v) => {
       centerForce = v
       ;(simulation.force("center") as any).strength(v)
@@ -842,10 +956,32 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       simulation.alpha(0.3).restart()
     })
 
+    // Shader / flow background
+    wireSlider("gs-shSpeed",    (v) => { shaderParams.speed = v;    bgShader?.setParam("speed", v) })
+    wireSlider("gs-shScale",    (v) => { shaderParams.scale = v;    bgShader?.setParam("scale", v) })
+    wireSlider("gs-shFlow",     (v) => { shaderParams.flow = v;     bgShader?.setParam("flow", v) })
+    wireSlider("gs-shVignette", (v) => { shaderParams.vignette = v; bgShader?.setParam("vignette", v) })
+    wireSlider("gs-shOpacity",  (v) => { shaderParams.opacity = v;  bgShader?.setParam("opacity", v) })
+    wireSlider("gs-shBias",     (v) => { shaderParams.bias = v;     bgShader?.setParam("bias", v) })
+
+    const wireColor = (id: string, key: "colorA" | "colorB") => {
+      const input = document.getElementById(id) as HTMLInputElement | null
+      const valEl = document.getElementById(id + "-val")
+      if (!input) return
+      input.addEventListener("input", () => {
+        shaderParams[key] = input.value
+        bgShader?.setParam(key, input.value)
+        if (valEl) valEl.textContent = input.value
+      })
+    }
+    wireColor("gs-shColorA", "colorA")
+    wireColor("gs-shColorB", "colorB")
+
     document.getElementById("graph-settings-save")!.addEventListener("click", () => {
       localStorage.setItem("dna-graph-forces", JSON.stringify({
         repelForce, centerForce, linkDistance, linkStrength,
         fontSize, opacityScale, linkWidth, nodeSizeMult,
+        shader: shaderParams,
       }))
       const btn = document.getElementById("graph-settings-save") as HTMLButtonElement
       btn.textContent = "已儲存 ✓"
