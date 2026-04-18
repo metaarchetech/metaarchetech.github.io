@@ -364,29 +364,27 @@ th { border-bottom: 1px solid var(--secondary); }
   transition: background 0.15s ease, color 0.15s ease !important;
 }
 
-// ── Top-level folders: bright, bold ──
-.sidebar.left .explorer > ul > li > .folder-outer > .folder-button,
-.sidebar.left .explorer > ul > li > a {
-  font-size: 0.82rem !important;
+// ── Explorer base: all links default to muted ──
+.sidebar.left .explorer a {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--gray) !important;
+}
+
+// ── Top-level (direct children of explorer-content > ul) ──
+.sidebar.left .explorer-content > ul > li > .folder-container a,
+.sidebar.left .explorer-content > ul > li > a {
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
   color: var(--dark) !important;
   letter-spacing: 0.01em;
 }
 
-// ── Second level: slightly smaller, muted ──
-.sidebar.left .explorer ul ul li > a,
-.sidebar.left .explorer ul ul li > .folder-outer > .folder-button {
-  font-size: 0.78rem !important;
-  font-weight: 400 !important;
-  color: var(--gray) !important;
-}
-
-// ── Third level and deeper: dimmer still ──
-.sidebar.left .explorer ul ul ul li > a,
-.sidebar.left .explorer ul ul ul li > .folder-outer > .folder-button {
-  font-size: 0.75rem !important;
-  color: var(--gray) !important;
-  opacity: 0.75;
+// ── Third level and deeper: dimmer ──
+.sidebar.left .explorer ul ul ul li > .folder-container a,
+.sidebar.left .explorer ul ul ul li > a {
+  font-size: 0.73rem !important;
+  opacity: 0.7;
 }
 
 // Hover — lift back to full brightness
