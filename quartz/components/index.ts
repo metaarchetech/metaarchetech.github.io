@@ -24,6 +24,7 @@ import Comments from "./Comments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
 import GraphLink from "./GraphLink"
+import DnaHeader from "./DnaHeader"
 
 export {
   ArticleTitle,
@@ -52,4 +53,5 @@ export {
   Flex,
   ConditionalRender,
   GraphLink,
+  DnaHeader,
 }
