@@ -71,8 +71,78 @@ body {
               color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-article h1 { letter-spacing: -0.03em; font-weight: 700; }
-article h2 { letter-spacing: -0.02em; }
+// ── Article typography scale ──────────────────────────────────────────────────
+//
+// Base (base.scss): h1 1.75rem / h2 1.4rem / h3 1.12rem — too flat.
+// We widen the scale and add distinct visual character per level.
+
+// Page title (ArticleTitle component)
+.article-title {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1.12 !important;
+  margin: 1.25rem 0 0 !important;
+  color: var(--dark) !important;
+}
+
+// H1 in body: large section opener
+article h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  margin-top: 3rem;
+  color: var(--dark);
+}
+
+// H2: section break — adds a bottom rule to signal "chapter"
+article h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin-top: 2.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--dark);
+}
+:root[saved-theme="light"] article h2 {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+// H3: subsection — clearly smaller, slightly muted
+article h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  margin-top: 2.25rem;
+  color: var(--darkgray);
+}
+
+// H4 / H5 / H6: HUD label — departs from heading style entirely
+article h4,
+article h5,
+article h6 {
+  font-family: var(--codeFont) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: #76b900 !important;
+  margin-top: 1.75rem;
+}
+
+// Body prose
+article p {
+  line-height: 1.82;
+  color: var(--darkgray);
+}
+article > p:first-of-type {
+  font-size: 1.05rem;
+  color: var(--dark);
+}
 
 pre {
   border: 1px solid var(--c-glass-border, var(--lightgray)) !important;
@@ -287,20 +357,51 @@ th { border-bottom: 1px solid var(--secondary); }
   border-bottom-color: rgba(0, 0, 0, 0.07);
 }
 
-// Explorer folder/file rows
+// Explorer rows — shared base
 .sidebar.left .explorer li > a,
 .sidebar.left .explorer button {
-  border-radius: 8px !important;
+  border-radius: 7px !important;
   transition: background 0.15s ease, color 0.15s ease !important;
 }
+
+// ── Top-level folders: bright, bold ──
+.sidebar.left .explorer > ul > li > .folder-outer > .folder-button,
+.sidebar.left .explorer > ul > li > a {
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: var(--dark) !important;
+  letter-spacing: 0.01em;
+}
+
+// ── Second level: slightly smaller, muted ──
+.sidebar.left .explorer ul ul li > a,
+.sidebar.left .explorer ul ul li > .folder-outer > .folder-button {
+  font-size: 0.78rem !important;
+  font-weight: 400 !important;
+  color: var(--gray) !important;
+}
+
+// ── Third level and deeper: dimmer still ──
+.sidebar.left .explorer ul ul ul li > a,
+.sidebar.left .explorer ul ul ul li > .folder-outer > .folder-button {
+  font-size: 0.75rem !important;
+  color: var(--gray) !important;
+  opacity: 0.75;
+}
+
+// Hover — lift back to full brightness
 .sidebar.left .explorer li > a:hover,
 .sidebar.left .explorer button:hover {
   background: rgba(255, 255, 255, 0.07) !important;
   color: #f4f4f5 !important;
+  opacity: 1 !important;
 }
+
+// Active page
 .sidebar.left .explorer li > a.active {
   background: rgba(118, 185, 0, 0.12) !important;
   color: #76b900 !important;
+  font-weight: 600 !important;
 }
 
 :root[saved-theme="light"] .sidebar.left .explorer li > a:hover,
@@ -309,14 +410,20 @@ th { border-bottom: 1px solid var(--secondary); }
   color: #09090b !important;
 }
 
-// Nested indent lines
+// Nested indent lines with decreasing opacity per level
 .sidebar.left .explorer ul ul {
   border-left: 1px solid rgba(255, 255, 255, 0.07);
-  margin-left: 0.6rem;
+  margin-left: 0.65rem;
   padding-left: 0.5rem;
+}
+.sidebar.left .explorer ul ul ul {
+  border-left-color: rgba(255, 255, 255, 0.04);
 }
 :root[saved-theme="light"] .sidebar.left .explorer ul ul {
   border-left-color: rgba(0, 0, 0, 0.08);
+}
+:root[saved-theme="light"] .sidebar.left .explorer ul ul ul {
+  border-left-color: rgba(0, 0, 0, 0.05);
 }
 
 // ── Graph / Backlinks / ToC inside floating right panel (glass variant) ──────
