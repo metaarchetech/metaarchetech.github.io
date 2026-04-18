@@ -258,6 +258,44 @@ document.addEventListener("nav", () => {
   }
   let currentModel = MODELS.researcher[0].value
 
+  // ── Starter chips ──────────────────────────────────────────────────────────
+  const STARTER_CHIPS: Record<string, string[]> = {
+    researcher: [
+      "Visustwin 最新進展是什麼？",
+      "DNA 設計系統的 Do / Don't 有哪些？",
+      "WebController 跟 welltek 的分工邏輯為何？",
+      "120 年 OTA 這個概念怎麼對應到數據層？",
+    ],
+    manager: [
+      "今天在做什麼？",
+      "哪些任務 blocked？",
+      "還沒 merge 的 PR 清單",
+      "Sprint 2026-04-18 的 Doing 項目",
+    ],
+  }
+
+  const chipsEl = document.getElementById("dna-ai-chips") as HTMLElement | null
+
+  const populateChips = (mode: string) => {
+    if (!chipsEl) return
+    const list = STARTER_CHIPS[mode] ?? []
+    chipsEl.innerHTML = ""
+    chipsEl.classList.remove("dna-chips-hidden")
+    for (const text of list) {
+      const btn = document.createElement("button")
+      btn.className = "dna-ai-chip-starter"
+      btn.textContent = text
+      btn.addEventListener("click", () => {
+        if (isStreaming) return
+        input.value = text
+        chipsEl.classList.add("dna-chips-hidden")
+        send()
+      })
+      chipsEl.appendChild(btn)
+    }
+  }
+  populateChips("researcher")
+
   // ── Restore saved panel size ───────────────────────────────────────────────
   const savedPanelW = localStorage.getItem("dna-ai-panel-width")
   const savedPanelH = localStorage.getItem("dna-ai-panel-height")
@@ -362,6 +400,7 @@ document.addEventListener("nav", () => {
         b.setAttribute("aria-pressed", String(active))
       }
       populateModels(currentMode)
+      populateChips(currentMode)
     })
     window.addCleanup(() => btn.removeEventListener("click", () => {}))
   }
@@ -476,6 +515,7 @@ document.addEventListener("nav", () => {
     input.value = ""
     isStreaming = true
     sendBtn.disabled = true
+    chipsEl?.classList.add("dna-chips-hidden")
 
     addMessage("user").textEl.textContent = query
 

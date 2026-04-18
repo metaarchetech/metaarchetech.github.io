@@ -72,6 +72,9 @@ export default ((opts: AiChatOptions) => {
           </div>
         </div>
 
+        {/* Starter chips */}
+        <div id="dna-ai-chips" class="dna-ai-chips" />
+
         {/* Input */}
         <div class="dna-ai-input-row">
           <input
@@ -400,6 +403,66 @@ export default ((opts: AiChatOptions) => {
 .dna-ai-chip:hover {
   background: rgba(118, 185, 0, 0.18);
   border-color: rgba(118, 185, 0, 0.5);
+}
+
+/* ── Starter chips ────────────────────────────────────────────────────── */
+.dna-ai-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.06);
+  transition: opacity 200ms ease, max-height 200ms ease;
+  max-height: 200px;
+  overflow: hidden;
+}
+.dna-ai-chips:empty { display: none; }
+.dna-ai-chips.dna-chips-hidden {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top-color: transparent;
+  pointer-events: none;
+}
+:root[saved-theme="light"] .dna-ai-chips {
+  border-top-color: rgba(0,0,0,0.07);
+  background: rgba(0,0,0,0.03);
+}
+.dna-ai-chip-starter {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-family: var(--bodyFont);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--gray);
+  text-align: left;
+  transition: color 150ms, background 150ms, border-color 150ms;
+  outline: none;
+  word-break: break-word;
+}
+.dna-ai-chip-starter:hover {
+  color: var(--dark);
+  background: rgba(118, 185, 0, 0.1);
+  border-color: rgba(118, 185, 0, 0.35);
+}
+:root[saved-theme="light"] .dna-ai-chip-starter {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
+}
+:root[saved-theme="light"] .dna-ai-chip-starter:hover {
+  background: rgba(118, 185, 0, 0.1);
+  border-color: rgba(118, 185, 0, 0.4);
+}
+@media (max-width: 640px) {
+  .dna-ai-chips { grid-template-columns: 1fr; }
 }
 
 /* ── Input row ────────────────────────────────────────────────────────── */

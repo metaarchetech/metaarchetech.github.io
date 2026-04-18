@@ -2,6 +2,9 @@
 // Deploy to Cloudflare Workers. Set GROQ_API_KEY as a secret:
 //   npx wrangler secret put GROQ_API_KEY
 
+import { BASE_VAULT_CONTEXT, RESEARCHER_MODE_CONTEXT, MANAGER_MODE_CONTEXT } from "./vault-context.js"
+import { MOC_SNAPSHOT } from "./moc-snapshot.js"
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -46,27 +49,26 @@ export default {
       .map((c, i) => `[${i + 1}] **${c.title}**\n${c.text}`)
       .join("\n\n---\n\n")
 
-    const modeInstructions = mode === "manager"
-      ? `You are in MANAGER mode. Be concise and executive.
-- Lead with a 1-2 sentence TL;DR
-- Use bullet points for key takeaways
-- Highlight action items or decisions if relevant
-- Skip academic detail; focus on what matters and why`
-      : `You are in RESEARCHER mode. Be thorough and analytical.
-- Explore connections between ideas
-- Use Markdown headings (##) to structure longer answers
-- Provide context and background
-- Note nuances, caveats, or open questions`
+    const modeCtx = mode === "manager" ? MANAGER_MODE_CONTEXT : RESEARCHER_MODE_CONTEXT
 
     const systemPrompt = context
-      ? `You are a knowledge assistant for a personal Obsidian vault published as a digital garden.
-${modeInstructions}
-Cite sources with [N] notation matching the context numbers.
-If the context doesn't contain relevant information, say so honestly.
+      ? `${BASE_VAULT_CONTEXT}
 
-Context notes:
+${MOC_SNAPSHOT}
+
+${modeCtx}
+
+## 引用規則
+- 使用 [N] 標記對應 context 來源編號
+- 若 context 無相關資訊請直說，不要捏造
+
+## Context 筆記
 ${context}`
-      : `You are a knowledge assistant for a personal digital garden. The query didn't match any notes. Tell the user to try different keywords.`
+      : `${BASE_VAULT_CONTEXT}
+
+${modeCtx}
+
+沒有找到相關筆記。請告訴使用者嘗試不同關鍵字，或問一個更具體的問題。`
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
