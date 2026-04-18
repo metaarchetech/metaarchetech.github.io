@@ -75,15 +75,60 @@ document.addEventListener("nav", () => {
   // ── Search button → trigger Quartz search overlay ────────────────────────
 
   const triggerSearch = () => {
-    // Quartz renders a .search div; clicking it opens the search modal
     const searchEl = document.querySelector(".search") as HTMLElement | null
-    if (searchEl) {
-      searchEl.click()
-    }
+    if (searchEl) searchEl.click()
   }
 
   for (const btn of document.getElementsByClassName("dna-search-btn")) {
     btn.addEventListener("click", triggerSearch)
     window.addCleanup(() => btn.removeEventListener("click", triggerSearch))
+  }
+
+  // ── Resizable right panel ─────────────────────────────────────────────────
+
+  const rightPanel = document.querySelector(".sidebar.right") as HTMLElement | null
+  if (rightPanel && window.innerWidth >= 1100) {
+    const savedWidth = localStorage.getItem("dna-right-panel-width")
+    if (savedWidth) rightPanel.style.setProperty("width", savedWidth, "important")
+
+    let handle = rightPanel.querySelector(".dna-resize-handle") as HTMLElement | null
+    if (!handle) {
+      handle = document.createElement("div")
+      handle.className = "dna-resize-handle"
+      handle.setAttribute("aria-hidden", "true")
+      rightPanel.prepend(handle)
+    }
+
+    let startX = 0
+    let startWidth = 0
+
+    const onPointerMove = (e: PointerEvent) => {
+      const delta = startX - e.clientX
+      const newWidth = Math.max(180, Math.min(520, startWidth + delta))
+      rightPanel.style.setProperty("width", newWidth + "px", "important")
+    }
+
+    const onPointerUp = (e: PointerEvent) => {
+      document.removeEventListener("pointermove", onPointerMove)
+      document.removeEventListener("pointerup", onPointerUp)
+      localStorage.setItem("dna-right-panel-width", rightPanel.style.width)
+      handle!.releasePointerCapture(e.pointerId)
+      document.body.style.userSelect = ""
+      document.body.style.cursor = ""
+    }
+
+    const onPointerDown = (e: PointerEvent) => {
+      startX = e.clientX
+      startWidth = rightPanel.offsetWidth
+      document.addEventListener("pointermove", onPointerMove)
+      document.addEventListener("pointerup", onPointerUp)
+      handle!.setPointerCapture(e.pointerId)
+      document.body.style.userSelect = "none"
+      document.body.style.cursor = "ew-resize"
+      e.preventDefault()
+    }
+
+    handle.addEventListener("pointerdown", onPointerDown)
+    window.addCleanup(() => handle!.removeEventListener("pointerdown", onPointerDown))
   }
 })

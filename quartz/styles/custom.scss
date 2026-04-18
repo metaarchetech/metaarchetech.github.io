@@ -206,7 +206,7 @@ th { border-bottom: 1px solid var(--secondary); }
       pointer-events: none;
       z-index: 0;
     }
-    & > * { position: relative; z-index: 1; }
+    & > *:not(.dna-resize-handle) { position: relative; z-index: 1; }
   }
 
   :root[saved-theme="light"] .page > #quartz-body > .sidebar.right {
@@ -222,6 +222,24 @@ th { border-bottom: 1px solid var(--secondary); }
 @media (max-width: 1099px) {
   .page > #quartz-body > .sidebar.right {
     display: none !important;
+  }
+}
+
+// ── Right panel resize handle ─────────────────────────────────────────────────
+
+.dna-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  border-radius: 20px 0 0 20px;
+  transition: background 200ms ease;
+  z-index: 1;
+
+  &:hover, &:active {
+    background: rgba(118, 185, 0, 0.25);
   }
 }
 
