@@ -1,3 +1,7 @@
+// Runs immediately (beforeDOMLoaded) — prevents light/dark flash on refresh
+const _userPref = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
+document.documentElement.setAttribute("saved-theme", localStorage.getItem("theme") ?? _userPref)
+
 document.addEventListener("nav", () => {
   // ── Theme toggle ─────────────────────────────────────────────────────────
 
