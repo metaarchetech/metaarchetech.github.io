@@ -110,7 +110,7 @@ body:has(article.graph-page) {
   .global-graph-outer {
     display: block !important;
     backdrop-filter: none !important;
-    background: var(--light) !important;
+    background: transparent !important;
   }
 
   .global-graph-container {
@@ -122,6 +122,7 @@ body:has(article.graph-page) {
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    background: transparent !important;
   }
 }
 

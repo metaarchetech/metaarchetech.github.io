@@ -612,7 +612,7 @@ th { border-bottom: 1px solid var(--secondary); }
   input[type="range"] {
     width: 100%;
     height: 3px;
-    accent-color: var(--secondary, #76b900);
+    accent-color: var(--darkgray);
     cursor: pointer;
   }
 }
@@ -635,15 +635,15 @@ th { border-bottom: 1px solid var(--secondary); }
 .graph-settings-save {
   padding: 0.3em 0.9em;
   border-radius: 6px;
-  border: 1px solid var(--secondary, #76b900);
+  border: 1px solid var(--lightgray);
   background: transparent;
-  color: var(--secondary, #76b900);
+  color: var(--darkgray);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   align-self: flex-end;
   transition: background 0.15s, color 0.15s;
-  &:hover { background: var(--secondary, #76b900); color: var(--light); }
+  &:hover { background: var(--lightgray); color: var(--dark); }
 }
 
 @media (max-width: 768px) {
