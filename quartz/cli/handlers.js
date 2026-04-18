@@ -287,6 +287,7 @@ export async function handleBuild(argv) {
               minify: true,
               platform: "browser",
               format: "esm",
+              external: ["pixi.js", "d3", "@tweenjs/tween.js"],
             })
             const rawMod = transpiled.outputFiles[0].text
             return {

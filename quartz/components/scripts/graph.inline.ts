@@ -1,21 +1,11 @@
 import type { ContentDetails } from "../../plugins/emitters/contentIndex"
-import {
+import type {
   SimulationNodeDatum,
   SimulationLinkDatum,
   Simulation,
-  forceSimulation,
-  forceManyBody,
-  forceCenter,
-  forceLink,
-  forceCollide,
-  forceRadial,
-  zoomIdentity,
-  select,
-  drag,
-  zoom,
 } from "d3"
-import { Text, Graphics, Application, Container, Circle } from "pixi.js"
-import { Group as TweenGroup, Tween as Tweened } from "@tweenjs/tween.js"
+import type { Text, Graphics, Application, Container, Circle } from "pixi.js"
+import type { Group as TweenGroup, Tween as Tweened } from "@tweenjs/tween.js"
 import { registerEscapeHandler, removeAllChildren } from "./util"
 import { FullSlug, SimpleSlug, getFullSlug, resolveRelative, simplifySlug } from "../../util/path"
 import { D3Config } from "../Graph"
@@ -69,6 +59,18 @@ type TweenNode = {
 }
 
 async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
+  // Lazy-load heavy rendering deps on first graph render (~640KB saved from initial bundle)
+  const [
+    { forceSimulation, forceManyBody, forceCenter, forceLink, forceCollide, forceRadial,
+      zoomIdentity, select, drag, zoom },
+    { Text, Graphics, Application, Container, Circle },
+    { Group: TweenGroup, Tween: Tweened },
+  ] = await Promise.all([
+    import("d3"),
+    import("pixi.js"),
+    import("@tweenjs/tween.js"),
+  ])
+
   const slug = simplifySlug(fullSlug)
   const visited = getVisited()
   removeAllChildren(graph)

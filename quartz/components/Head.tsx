@@ -36,8 +36,18 @@ export default (() => {
     )
     const ogImageDefaultPath = `https://${cfg.baseUrl}/static/og-image.png`
 
+    const graphImportMap = JSON.stringify({
+      imports: {
+        "pixi.js": "https://esm.sh/pixi.js@8.15.0",
+        "d3": "https://esm.sh/d3@7.9.0",
+        "@tweenjs/tween.js": "https://esm.sh/@tweenjs/tween.js@25.0.0",
+      },
+    })
+
     return (
       <head>
+        {/* importmap must precede all module scripts; maps graph deps to CDN ESM builds */}
+        <script type="importmap" dangerouslySetInnerHTML={{ __html: graphImportMap }} />
         <title>{title}</title>
         <meta charSet="utf-8" />
         {cfg.theme.cdnCaching && cfg.theme.fontOrigin === "googleFonts" && (
