@@ -22,7 +22,10 @@ class BM25 {
   }
 
   private tok(text: string): string[] {
-    return text.toLowerCase().match(/\w+/g) ?? []
+    // ASCII words + individual CJK characters (Chinese has no spaces)
+    const ascii = text.toLowerCase().match(/[a-z0-9]+/g) ?? []
+    const cjk = text.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g) ?? []
+    return [...ascii, ...cjk]
   }
 
   search(query: string, k = 5): Chunk[] {
