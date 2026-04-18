@@ -554,23 +554,23 @@ th { border-bottom: 1px solid var(--secondary); }
   }
 }
 
-// ── Graph settings panel ─────────────────────────────────────────────────────
+// ── Graph settings panel (right side, always visible on desktop) ─────────────
 
-.graph-settings-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  color: var(--gray);
-  font-size: 0.78rem;
-  padding: 0.35em 0.7em;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--light) 85%, transparent);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--lightgray);
-  width: fit-content;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
-  &:hover { color: var(--dark); border-color: var(--gray); background: var(--light); }
+#graph-settings-right {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  pointer-events: none;
+  & > * { pointer-events: auto; }
+}
+
+.graph-settings-mobile-toggle {
+  display: none; // desktop: toggle hidden, panel always visible
 }
 
 .graph-settings-panel {
@@ -583,8 +583,6 @@ th { border-bottom: 1px solid var(--secondary); }
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-
-  &[hidden] { display: none; }
 }
 
 .graph-settings-section {
@@ -649,6 +647,32 @@ th { border-bottom: 1px solid var(--secondary); }
 }
 
 @media (max-width: 768px) {
-  .graph-settings-panel { width: 200px; }
+  #graph-settings-right {
+    top: auto;
+    bottom: 1rem;
+    right: 1rem;
+    align-items: flex-end;
+  }
+
+  .graph-settings-mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.4em 0.8em;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--light) 90%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--lightgray);
+    color: var(--darkgray);
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .graph-settings-panel {
+    display: none;
+    width: 200px;
+    &.mobile-open { display: flex; }
+  }
+
   .graph-settings-row { grid-template-columns: 1fr 60px 2em; }
 }

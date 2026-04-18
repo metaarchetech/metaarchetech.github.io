@@ -599,12 +599,15 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     requestAnimationFrame(animate)
   }
 
-  // ── Full-page /graph settings UI ────────────────────────────────────────────
+  // ── Full-page /graph UI (left info + right settings) ────────────────────────
   if (isFullPage) {
     document.getElementById("graph-ui")?.remove()
+    document.getElementById("graph-settings-right")?.remove()
 
     const nodeCount = graphData.nodes.filter((n) => !n.id.startsWith("tags/")).length
     const linkCount = graphData.links.length
+
+    // Left info panel
     const ui = document.createElement("div")
     ui.id = "graph-ui"
     ui.innerHTML = `
@@ -626,14 +629,15 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
         <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:transparent;border:2px solid var(--tertiary)"></span>Tags</div>
       </div>
       <div class="graph-ui-hint">Scroll to zoom · Drag to pan · Click node to open</div>
-      <button class="graph-settings-toggle" id="graph-settings-toggle" title="Graph Settings">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        設定
-      </button>
-      <div class="graph-settings-panel" id="graph-settings-panel" hidden>
+    `
+    document.body.appendChild(ui)
+
+    // Right settings panel (always visible on desktop, collapsible on mobile)
+    const settingsEl = document.createElement("div")
+    settingsEl.id = "graph-settings-right"
+    settingsEl.innerHTML = `
+      <button class="graph-settings-mobile-toggle" id="graph-settings-mobile-toggle">設定 ▾</button>
+      <div class="graph-settings-panel" id="graph-settings-panel">
         <div class="graph-settings-section">
           <div class="graph-settings-section-title">外觀設定</div>
           <label class="graph-settings-row">
@@ -683,11 +687,14 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
         <button class="graph-settings-save" id="graph-settings-save">Save</button>
       </div>
     `
-    document.body.appendChild(ui)
+    document.body.appendChild(settingsEl)
 
-    document.getElementById("graph-settings-toggle")!.addEventListener("click", () => {
+    // Mobile toggle (hidden on desktop via CSS)
+    document.getElementById("graph-settings-mobile-toggle")!.addEventListener("click", () => {
       const panel = document.getElementById("graph-settings-panel")!
-      panel.hidden = !panel.hidden
+      const btn = document.getElementById("graph-settings-mobile-toggle") as HTMLButtonElement
+      const open = panel.classList.toggle("mobile-open")
+      btn.textContent = open ? "設定 ▴" : "設定 ▾"
     })
 
     const wireSlider = (id: string, onInput: (v: number) => void) => {
@@ -748,6 +755,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     stopAnimation = true
     app.destroy()
     document.getElementById("graph-ui")?.remove()
+    document.getElementById("graph-settings-right")?.remove()
   }
 }
 
