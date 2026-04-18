@@ -186,7 +186,7 @@ body:has(article.graph-page) {
     display: none !important;
   }
 
-  // ── The graph itself ──
+  // ── Hide local graph only (not wrapper — global graph is its sibling) ──
   .popover-hint .graph {
     height: 100dvh !important;
     margin: 0 !important;
@@ -196,24 +196,7 @@ body:has(article.graph-page) {
     }
 
     & > .graph-outer {
-      height: 100dvh !important;
-      border: none !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      margin: 0 !important;
-
-      canvas {
-        filter: none !important;
-      }
-
-      &:hover {
-        border-color: transparent !important;
-        box-shadow: none !important;
-
-        canvas {
-          filter: none !important;
-        }
-      }
+      display: none !important;
     }
   }
 }
