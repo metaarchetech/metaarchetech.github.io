@@ -131,25 +131,40 @@ th { border-bottom: 1px solid var(--secondary); }
               box-shadow 340ms ease;
   z-index: 8000;
   padding: 5.5rem 1.25rem 2rem 1.25rem !important;
-  background: rgba(9, 9, 11, 0.97) !important;
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+  // Glass: semi-transparent so page content bleeds through subtly
+  background: rgba(9, 9, 11, 0.78) !important;
+  backdrop-filter: blur(32px) saturate(180%) brightness(0.85);
+  -webkit-backdrop-filter: blur(32px) saturate(180%) brightness(0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: none;
   overflow-y: auto;
   flex-direction: column !important;
-  gap: 1rem !important;
+  gap: 0 !important;
+
+  // Subtle top highlight edge
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(118, 185, 0, 0.3), transparent);
+    pointer-events: none;
+  }
 
   &.dna-open {
     transform: translateX(0);
-    box-shadow: 8px 0 60px rgba(0, 0, 0, 0.7);
+    box-shadow: 12px 0 80px rgba(0, 0, 0, 0.6), 1px 0 0 rgba(255,255,255,0.05);
   }
 }
 
 // Light mode drawer
 :root[saved-theme="light"] .page > #quartz-body > .sidebar.left {
-  background: rgba(244, 244, 245, 0.97) !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.07) !important;
+  background: rgba(248, 248, 250, 0.82) !important;
+  backdrop-filter: blur(32px) saturate(160%) brightness(1.05) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(160%) brightness(1.05) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 // Drawer backdrop overlay
@@ -256,16 +271,52 @@ th { border-bottom: 1px solid var(--secondary); }
 
 // ── Drawer interior styling ───────────────────────────────────────────────────
 
+// Section label above explorer
+.sidebar.left .explorer::before {
+  content: "NAVIGATION";
+  display: block;
+  font-family: var(--codeFont);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: rgba(118, 185, 0, 0.7);
+  padding: 0 0.25rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.5rem;
+}
+:root[saved-theme="light"] .sidebar.left .explorer::before {
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+}
+
+// Explorer folder/file rows
+.sidebar.left .explorer li > a,
+.sidebar.left .explorer button {
+  border-radius: 8px !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
 .sidebar.left .explorer li > a:hover,
 .sidebar.left .explorer button:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-radius: 6px;
-  transition: background 0.15s ease;
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #f4f4f5 !important;
+}
+.sidebar.left .explorer li > a.active {
+  background: rgba(118, 185, 0, 0.12) !important;
+  color: #76b900 !important;
 }
 
 :root[saved-theme="light"] .sidebar.left .explorer li > a:hover,
 :root[saved-theme="light"] .sidebar.left .explorer button:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #09090b !important;
+}
+
+// Nested indent lines
+.sidebar.left .explorer ul ul {
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  margin-left: 0.6rem;
+  padding-left: 0.5rem;
+}
+:root[saved-theme="light"] .sidebar.left .explorer ul ul {
+  border-left-color: rgba(0, 0, 0, 0.08);
 }
 
 // ── Graph / Backlinks / ToC inside floating right panel (glass variant) ──────

@@ -64,9 +64,14 @@ document.addEventListener("nav", () => {
   // Close drawer on SPA navigation (new page loaded → close drawer)
   closeDrawer()
 
+  const toggleDrawer = () => {
+    if (drawer?.classList.contains("dna-open")) closeDrawer()
+    else openDrawer()
+  }
+
   for (const btn of document.getElementsByClassName("dna-hamburger")) {
-    btn.addEventListener("click", openDrawer)
-    window.addCleanup(() => btn.removeEventListener("click", openDrawer))
+    btn.addEventListener("click", toggleDrawer)
+    window.addCleanup(() => btn.removeEventListener("click", toggleDrawer))
   }
 
   // ESC closes drawer
