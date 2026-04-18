@@ -165,11 +165,27 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
   const width = isFullPage ? window.innerWidth : graph.offsetWidth
   const height = isFullPage ? window.innerHeight : Math.max(graph.offsetHeight, 250)
 
+  let linkStrength = 1
+  let linkWidth = isFullPage ? 2 : 1
+  let nodeSizeMult = 1
+  // Load saved graph settings from localStorage
+  try {
+    const saved = JSON.parse(localStorage.getItem("dna-graph-forces") ?? "{}")
+    if (saved.repelForce != null) repelForce = +saved.repelForce
+    if (saved.centerForce != null) centerForce = +saved.centerForce
+    if (saved.linkDistance != null) linkDistance = +saved.linkDistance
+    if (saved.linkStrength != null) linkStrength = +saved.linkStrength
+    if (saved.fontSize != null) fontSize = +saved.fontSize
+    if (saved.opacityScale != null) opacityScale = +saved.opacityScale
+    if (saved.linkWidth != null) linkWidth = +saved.linkWidth
+    if (saved.nodeSizeMult != null) nodeSizeMult = +saved.nodeSizeMult
+  } catch {}
+
   // we virtualize the simulation and use pixi to actually render it
   const simulation: Simulation<NodeData, LinkData> = forceSimulation<NodeData>(graphData.nodes)
     .force("charge", forceManyBody().strength(-100 * repelForce))
     .force("center", forceCenter().strength(centerForce))
-    .force("link", forceLink(graphData.links).distance(linkDistance))
+    .force("link", forceLink(graphData.links).distance(linkDistance).strength(linkStrength))
     .force("collide", forceCollide<NodeData>((n) => nodeRadius(n)).iterations(3))
 
   const radius = (Math.min(width, height) / 2) * 0.8
@@ -196,12 +212,12 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
 
   // PARA folder color palette — mirrors Obsidian graph.json colorGroups
   const folderColors: [string, string][] = [
-    ["00-Meta",      "#ff4747"], // red    (rgb 16729927)
-    ["01-Projects",  "#ffcd42"], // amber  (rgb 16764226)
-    ["02-Areas",     "#c3ff42"], // lime   (rgb 12844866)
-    ["03-Products",  "#42bfff"], // sky    (new folder)
-    ["04-Resources", "#52ff5d"], // green  (rgb  5439325)
-    ["05-Archive",   "#ababab"], // gray   (rgb 11250603)
+    ["00-Meta",      "#ffffff"], // white  (rgb 16777215)
+    ["01-Projects",  "#60a5fa"], // blue   (rgb  6333946)
+    ["02-Areas",     "#34d399"], // green  (rgb  3462041)
+    ["03-Products",  "#a78bfa"], // purple (rgb 10980346)
+    ["04-Resources", "#fbbf24"], // amber  (rgb 16498468)
+    ["05-Archive",   "#9ca3af"], // gray   (rgb 10265519)
   ]
 
   function getFolderColor(id: string): string | null {
@@ -231,7 +247,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     const numLinks = graphData.links.filter(
       (l) => l.source.id === d.id || l.target.id === d.id,
     ).length
-    return (isFullPage ? 4 : 2) + Math.sqrt(numLinks) * (isFullPage ? 1.8 : 1)
+    return ((isFullPage ? 4 : 2) + Math.sqrt(numLinks) * (isFullPage ? 1.8 : 1)) * nodeSizeMult
   }
 
   let hoveredNodeId: string | null = null
@@ -575,7 +591,7 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       l.gfx.moveTo(linkData.source.x! + width / 2, linkData.source.y! + height / 2)
       l.gfx
         .lineTo(linkData.target.x! + width / 2, linkData.target.y! + height / 2)
-        .stroke({ alpha: l.alpha, width: isFullPage ? 2 : 1, color: l.color })
+        .stroke({ alpha: l.alpha, width: linkWidth, color: l.color })
     }
 
     tweens.forEach((t) => t.update(time))
@@ -583,10 +599,155 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     requestAnimationFrame(animate)
   }
 
+  // ── Full-page /graph settings UI ────────────────────────────────────────────
+  if (isFullPage) {
+    document.getElementById("graph-ui")?.remove()
+
+    const nodeCount = graphData.nodes.filter((n) => !n.id.startsWith("tags/")).length
+    const linkCount = graphData.links.length
+    const ui = document.createElement("div")
+    ui.id = "graph-ui"
+    ui.innerHTML = `
+      <a href="/" class="graph-ui-back" aria-label="Back to home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Home
+      </a>
+      <div class="graph-ui-title">Knowledge Graph</div>
+      <div class="graph-ui-stats">${nodeCount} nodes · ${linkCount} links</div>
+      <div class="graph-ui-legend">
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#ffffff;box-shadow:0 0 0 1px var(--lightgray)"></span>Meta</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#60a5fa"></span>Projects</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#34d399"></span>Areas</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#a78bfa"></span>Products</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#fbbf24"></span>Resources</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#9ca3af"></span>Archive</div>
+        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:transparent;border:2px solid var(--tertiary)"></span>Tags</div>
+      </div>
+      <div class="graph-ui-hint">Scroll to zoom · Drag to pan · Click node to open</div>
+      <button class="graph-settings-toggle" id="graph-settings-toggle" title="Graph Settings">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        設定
+      </button>
+      <div class="graph-settings-panel" id="graph-settings-panel" hidden>
+        <div class="graph-settings-section">
+          <div class="graph-settings-section-title">外觀設定</div>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">文字大小</span>
+            <input type="range" id="gs-fontSize" min="0.5" max="3" step="0.1" value="${fontSize.toFixed(1)}">
+            <span class="graph-settings-value" id="gs-fontSize-val">${fontSize.toFixed(1)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">文字透明度</span>
+            <input type="range" id="gs-opacityScale" min="0" max="5" step="0.1" value="${opacityScale.toFixed(1)}">
+            <span class="graph-settings-value" id="gs-opacityScale-val">${opacityScale.toFixed(1)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">節點尺寸</span>
+            <input type="range" id="gs-nodeSizeMult" min="0.25" max="3" step="0.05" value="${nodeSizeMult.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-nodeSizeMult-val">${nodeSizeMult.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">連接線寬度</span>
+            <input type="range" id="gs-linkWidth" min="0.5" max="5" step="0.25" value="${linkWidth.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-linkWidth-val">${linkWidth.toFixed(2)}</span>
+          </label>
+        </div>
+        <div class="graph-settings-section">
+          <div class="graph-settings-section-title">強度設定</div>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">節點集中強度</span>
+            <input type="range" id="gs-centerForce" min="0" max="1" step="0.01" value="${centerForce.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-centerForce-val">${centerForce.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">節點互斥強度</span>
+            <input type="range" id="gs-repelForce" min="0" max="10" step="0.1" value="${repelForce.toFixed(1)}">
+            <span class="graph-settings-value" id="gs-repelForce-val">${repelForce.toFixed(1)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">連結強度</span>
+            <input type="range" id="gs-linkStrength" min="0" max="1" step="0.01" value="${linkStrength.toFixed(2)}">
+            <span class="graph-settings-value" id="gs-linkStrength-val">${linkStrength.toFixed(2)}</span>
+          </label>
+          <label class="graph-settings-row">
+            <span class="graph-settings-label">連接線距離</span>
+            <input type="range" id="gs-linkDistance" min="10" max="300" step="5" value="${Math.round(linkDistance)}">
+            <span class="graph-settings-value" id="gs-linkDistance-val">${Math.round(linkDistance)}</span>
+          </label>
+        </div>
+        <button class="graph-settings-save" id="graph-settings-save">Save</button>
+      </div>
+    `
+    document.body.appendChild(ui)
+
+    document.getElementById("graph-settings-toggle")!.addEventListener("click", () => {
+      const panel = document.getElementById("graph-settings-panel")!
+      panel.hidden = !panel.hidden
+    })
+
+    const wireSlider = (id: string, onInput: (v: number) => void) => {
+      const input = document.getElementById(id) as HTMLInputElement | null
+      if (!input) return
+      const valEl = document.getElementById(id + "-val")
+      input.addEventListener("input", () => {
+        const v = parseFloat(input.value)
+        if (valEl) {
+          const dec = input.step.includes(".") ? (input.step.split(".")[1]?.length ?? 1) : 0
+          valEl.textContent = dec > 0 ? v.toFixed(dec) : String(Math.round(v))
+        }
+        onInput(v)
+      })
+    }
+
+    wireSlider("gs-fontSize", (v) => {
+      fontSize = v
+      for (const n of nodeRenderData) n.label.style.fontSize = v * 15
+    })
+    wireSlider("gs-opacityScale", (v) => { opacityScale = v })
+    wireSlider("gs-linkWidth", (v) => { linkWidth = v })
+    wireSlider("gs-nodeSizeMult", (v) => { nodeSizeMult = v })
+    wireSlider("gs-centerForce", (v) => {
+      centerForce = v
+      ;(simulation.force("center") as any).strength(v)
+      simulation.alpha(0.3).restart()
+    })
+    wireSlider("gs-repelForce", (v) => {
+      repelForce = v
+      ;(simulation.force("charge") as any).strength(-100 * v)
+      simulation.alpha(0.3).restart()
+    })
+    wireSlider("gs-linkStrength", (v) => {
+      linkStrength = v
+      ;(simulation.force("link") as any).strength(v)
+      simulation.alpha(0.3).restart()
+    })
+    wireSlider("gs-linkDistance", (v) => {
+      linkDistance = v
+      ;(simulation.force("link") as any).distance(v)
+      simulation.alpha(0.3).restart()
+    })
+
+    document.getElementById("graph-settings-save")!.addEventListener("click", () => {
+      localStorage.setItem("dna-graph-forces", JSON.stringify({
+        repelForce, centerForce, linkDistance, linkStrength,
+        fontSize, opacityScale, linkWidth, nodeSizeMult,
+      }))
+      const btn = document.getElementById("graph-settings-save") as HTMLButtonElement
+      btn.textContent = "已儲存 ✓"
+      setTimeout(() => { btn.textContent = "Save" }, 1500)
+    })
+  }
+
   requestAnimationFrame(animate)
   return () => {
     stopAnimation = true
     app.destroy()
+    document.getElementById("graph-ui")?.remove()
   }
 }
 
@@ -681,48 +842,8 @@ document.addEventListener("nav", async (e: CustomEventMap["nav"]) => {
     cleanupGlobalGraphs()
   })
 
-  // Auto-open global graph on dedicated /graph page
+  // Auto-open global graph on dedicated /graph page — UI is injected from within renderGraph
   if (simplifySlug(slug) === "graph") {
     await renderGlobalGraph()
-
-    // Inject floating UI overlay
-    const existing = document.getElementById("graph-ui")
-    if (existing) existing.remove()
-
-    // Count nodes/links from the content index (graphData is scoped inside renderGraph)
-    const contentData = Object.entries<ContentDetails>(await fetchData)
-    const totalNodes = contentData.length
-    let totalLinks = 0
-    for (const [, details] of contentData) {
-      totalLinks += (details.links ?? []).length
-    }
-
-    const ui = document.createElement("div")
-    ui.id = "graph-ui"
-    ui.innerHTML = `
-      <a href="/" class="graph-ui-back" aria-label="Back to home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Home
-      </a>
-      <div class="graph-ui-title">Knowledge Graph</div>
-      <div class="graph-ui-stats">${totalNodes} nodes · ${totalLinks} links</div>
-      <div class="graph-ui-legend">
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#a78bfa"></span>Meta</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#60a5fa"></span>Projects</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#34d399"></span>Areas</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#fbbf24"></span>Resources</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:#9ca3af"></span>Archive</div>
-        <div class="graph-ui-legend-item"><span class="graph-ui-dot" style="background:transparent;border:2px solid var(--tertiary)"></span>Tags</div>
-      </div>
-      <div class="graph-ui-hint">Scroll to zoom · Drag to pan · Click node to open</div>
-    `
-    document.body.appendChild(ui)
-
-    window.addCleanup(() => {
-      const el = document.getElementById("graph-ui")
-      if (el) el.remove()
-    })
   }
 })
