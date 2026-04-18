@@ -339,22 +339,52 @@ th { border-bottom: 1px solid var(--secondary); }
   background: transparent !important;
 }
 
+// ── Graph link label ─────────────────────────────────────────────────────────
+
+.sidebar.left .graph-link {
+  font-family: var(--codeFont) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(118, 185, 0, 0.85) !important;
+  text-decoration: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4em !important;
+  padding-top: 0.75rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin-top: 0.25rem !important;
+}
+:root[saved-theme="light"] .sidebar.left .graph-link {
+  border-top-color: rgba(0, 0, 0, 0.07) !important;
+  color: rgba(80, 140, 0, 0.9) !important;
+}
+.sidebar.left .graph-link:hover {
+  color: #76b900 !important;
+  opacity: 1 !important;
+}
+
 // ── Drawer interior styling ───────────────────────────────────────────────────
 
-// Section label above explorer
-.sidebar.left .explorer::before {
-  content: "NAVIGATION";
-  display: block;
-  font-family: var(--codeFont);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: rgba(118, 185, 0, 0.7);
-  padding: 0 0.25rem 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 0.5rem;
+// Explorer title button → section label style
+.sidebar.left .explorer .title-button {
+  font-family: var(--codeFont) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(118, 185, 0, 0.85) !important;
+  padding: 0 0.1rem 0.5rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin-bottom: 0.25rem !important;
+  width: 100% !important;
+  text-align: left !important;
+  justify-content: space-between !important;
 }
-:root[saved-theme="light"] .sidebar.left .explorer::before {
-  border-bottom-color: rgba(0, 0, 0, 0.07);
+:root[saved-theme="light"] .sidebar.left .explorer .title-button {
+  border-bottom-color: rgba(0, 0, 0, 0.07) !important;
+  color: rgba(80, 140, 0, 0.9) !important;
 }
 
 // Explorer rows — shared base
