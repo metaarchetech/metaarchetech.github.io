@@ -7,7 +7,7 @@ export const sharedPageComponents: SharedLayout = {
   header: [Component.DnaHeader()],
   afterBody: [
     Component.AiChat({
-      workerUrl: "https://metaarchetech-ai.YOUR_SUBDOMAIN.workers.dev",
+      workerUrl: "https://metaarchetech-ai.metaarteorg.workers.dev",
     }),
   ],
   footer: Component.Footer({

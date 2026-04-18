@@ -1,6 +1,7 @@
 name = "metaarchetech-ai"
 main = "index.js"
 compatibility_date = "2024-01-01"
+workers_dev = true
 
 # Deploy: npx wrangler deploy
 # Set API key: npx wrangler secret put GROQ_API_KEY
